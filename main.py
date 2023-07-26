@@ -38,9 +38,9 @@ class GUI:
         self.top_frame = tk.Frame(self.root)
         self.top_frame.rowconfigure(0, weight=1)
         
-        self.btn1 = tk.Button(self.top_frame, text="zoom in")
+        self.btn1 = tk.Button(self.top_frame, text="zoom in", command=self.man_zoom_in)
         self.btn1.grid(row=0, column=0, sticky=tk.W+tk.E)
-        self.btn2 = tk.Button(self.top_frame, text="zoom out")
+        self.btn2 = tk.Button(self.top_frame, text="zoom out", command=self.man_zoom_out)
         self.btn2.grid(row=0, column=1, sticky=tk.W+tk.E)
         self.btn3 = tk.Button(self.top_frame, text="Change Image", command=self.change_image)
         self.btn3.grid(row=0, column=2, sticky=tk.W+tk.E)
@@ -57,7 +57,7 @@ class GUI:
 
         # Display the image on the canvas
         self.image_tk = ImageTk.PhotoImage(self.image)
-        self.image_item = self.canvas.create_image(0, 0, image=self.image_tk)
+        self.image_item = self.canvas.create_image(0, 0, anchor='center',image=self.image_tk)
         self.playerImgs = []
         for player in self.players:
             self.playerImgs.append(self.canvas.create_image(player.pos[0], player.pos[1], image=ImageTk.PhotoImage(Image.fromarray(player.create_image()))))
@@ -66,7 +66,7 @@ class GUI:
         self.canvas.bind("<MouseWheel>", self.on_mouse_wheel)
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonPress-1>", self.on_drag_start)
-        self.canvas.bind("<ButtonRelease-1>", self.on_drag_stop)
+        # self.canvas.bind("<ButtonRelease-1>", self.on_drag_stop)
         
     def change_image(self):
         self.filename = askopenfilename()
@@ -77,10 +77,7 @@ class GUI:
     def on_drag_start(self, event):
         self.x = event.x
         self.y = event.y
-    
-    def on_drag_stop(self, event):
-        self.x = 0
-        self.y = 0
+
 
     def on_mouse_wheel(self, event):
         # Zoom the image in or out based on the mouse wheel direction
@@ -89,6 +86,14 @@ class GUI:
         else:
             self.zoom_level /= 1.2
 
+        self.update_image()
+
+    def man_zoom_in(self):
+        self.zoom_level *= 1.2
+        self.update_image()
+
+    def man_zoom_out(self):
+        self.zoom_level /= 1.2
         self.update_image()
 
     def on_drag(self, event):
@@ -103,9 +108,11 @@ class GUI:
         # Calculate the new size of the image based on the zoom level
         new_width = int(self.image.width * self.zoom_level)
         new_height = int(self.image.height * self.zoom_level)
+        canvas_width = self.canvas.winfo_width()
+        canvas_height = self.canvas.winfo_height()
+        print(self.zoom_level)
 
-        # Resize the image
-        resized_image = self.image.resize((new_width, new_height), Image.LANCZOS)
+        resized_image = self.image.resize(size=(canvas_width, canvas_height), box=(self.x,self.y,canvas_width*(1/self.zoom_level),canvas_height*(1/self.zoom_level)))
         
         # Change Image here, add players
         player_Image = Image.fromarray(self.add_players(resized_image))
